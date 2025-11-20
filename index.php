@@ -1,20 +1,26 @@
 <?php
 declare(strict_types=1);
 
-header('Content-Type: application/json');
-
 function respond(int $httpCode, array $body): void
 {
+    header('Content-Type: application/json');
     http_response_code($httpCode);
     echo json_encode($body);
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Allow: POST');
+function escape(?string $value): string
+{
+    return htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
+}
+
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+if ($method !== 'POST' && $method !== 'GET') {
+    header('Allow: GET, POST');
     respond(405, [
         'status'  => 'error',
-        'message' => 'Gunakan metode POST untuk endpoint webhook ini.',
+        'message' => 'Metode tidak didukung. Gunakan GET atau POST.',
     ]);
 }
 
@@ -60,6 +66,100 @@ try {
      KEY `idx_message_timestamp` (`message_timestamp`)
  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 */
+
+if ($method === 'GET') {
+    try {
+        $stmt = $pdo->query(
+            'SELECT remote_jid,
+                    push_name,
+                    message_text,
+                    message_timestamp
+             FROM whatsapp_webhooks
+             ORDER BY remote_jid ASC, message_timestamp DESC'
+        );
+        $rows = $stmt->fetchAll();
+    } catch (PDOException $e) {
+        http_response_code(500);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Gagal mengambil data: ' . $e->getMessage();
+        exit;
+    }
+
+    $grouped = [];
+    foreach ($rows as $row) {
+        $remote = $row['remote_jid'] ?? '-';
+        if (!isset($grouped[$remote])) {
+            $grouped[$remote] = [];
+        }
+        $grouped[$remote][] = $row;
+    }
+
+    header('Content-Type: text/html; charset=utf-8');
+
+    $totalNomor = count($grouped);
+    ?>
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+        <meta charset="UTF-8">
+        <title>Ringkasan Pesan WhatsApp</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 2rem; background: #f7f7f7; }
+            table { border-collapse: collapse; width: 100%; background: #fff; }
+            th, td { padding: 0.75rem 1rem; border: 1px solid #e0e0e0; vertical-align: top; }
+            th { background: #fafafa; text-align: left; }
+            caption { text-align: left; font-size: 1.2rem; margin-bottom: 1rem; }
+            small { color: #666; }
+            tr.remote-header td { background: #f0f6ff; font-weight: bold; }
+        </style>
+    </head>
+    <body>
+    <h1>Ringkasan Pesan WhatsApp</h1>
+    <p>Total nomor unik: <strong><?php echo $totalNomor; ?></strong></p>
+    <table>
+        <caption>Pesan per nomor (group by nomor HP)</caption>
+        <thead>
+        <tr>
+            <th>Nomor / remote_jid</th>
+            <th>Nama Pengirim</th>
+            <th>Isi Pesan</th>
+            <th>Waktu</th>
+        </tr>
+        </thead>
+        <tbody>
+        <?php if ($totalNomor === 0): ?>
+            <tr>
+                <td colspan="4">Belum ada data tersimpan.</td>
+            </tr>
+        <?php else: ?>
+            <?php foreach ($grouped as $remoteJid => $messages): ?>
+                <?php $rowspan = count($messages); ?>
+                <?php foreach ($messages as $index => $message): ?>
+                    <?php
+                    $timestamp = $message['message_timestamp']
+                        ? date('Y-m-d H:i:s', (int) $message['message_timestamp'])
+                        : '-';
+                    ?>
+                    <tr>
+                        <?php if ($index === 0): ?>
+                            <td rowspan="<?php echo $rowspan; ?>">
+                                <?php echo escape($remoteJid); ?>
+                            </td>
+                        <?php endif; ?>
+                        <td><?php echo escape($message['push_name'] ?? '-'); ?></td>
+                        <td><?php echo nl2br(escape($message['message_text'] ?? '-')); ?></td>
+                        <td><small><?php echo escape($timestamp); ?></small></td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endforeach; ?>
+        <?php endif; ?>
+        </tbody>
+    </table>
+    </body>
+    </html>
+    <?php
+    exit;
+}
 
 // --- Baca payload JSON dari php://input ---
 $rawInput = file_get_contents('php://input');
