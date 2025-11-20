@@ -1,0 +1,90 @@
+
+@baseUrl = http://localhost/whatsva-webhook
+
+### Contoh request pesan personal
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "key": {
+    "remoteJid": "6285281411550@s.whatsapp.net",
+    "remoteJidAlt": "170166621098092@lid",
+    "fromMe": false,
+    "id": "3EB0B868C501D996E7F731",
+    "participant": "",
+    "addressingMode": "pn"
+  },
+  "messageTimestamp": 1763649506,
+  "pushName": "Faleh Ahmad Jamaluddin",
+  "broadcast": false,
+  "message": {
+    "conversation": "halo",
+    "messageContextInfo": {
+      "deviceListMetadata": {
+        "senderKeyHash": "/U1Suq0bjl71OA==",
+        "senderTimestamp": "1763087882",
+        "senderAccountType": "E2EE",
+        "receiverAccountType": "E2EE",
+        "recipientKeyHash": "bu7q4x/9fFYAzQ==",
+        "recipientTimestamp": "1763053934"
+      },
+      "deviceListMetadataVersion": 2,
+      "messageSecret": "//npzRGl3S5O0Lf+vruafgY7ZI8AHpfKp59SO8BfjD4=",
+      "limitSharingV2": {
+        "sharingLimited": false,
+        "trigger": "UNKNOWN",
+        "limitSharingSettingTimestamp": "0",
+        "initiatedByMe": false
+      }
+    }
+  },
+  "pesan": "halo",
+  "instance_key": "MOixAfMQgT2q",
+  "keyword": "*",
+  "file": null,
+  "whatsapp_number": "6285281411550",
+  "source": "personal",
+  "event": "message"
+}
+
+### Contoh request pesan grup
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "key": {
+    "remoteJid": "120363403933067028@g.us",
+    "fromMe": false,
+    "id": "3EB0966E149CCA0B39EB74",
+    "participant": "170166621098092@lid",
+    "participantAlt": "6285281411550@s.whatsapp.net",
+    "addressingMode": "lid"
+  },
+  "messageTimestamp": 1763650289,
+  "pushName": "Faleh Ahmad Jamaluddin",
+  "broadcast": false,
+  "message": {
+    "conversation": "halo",
+    "senderKeyDistributionMessage": {
+      "groupId": "120363403933067028@g.us",
+      "axolotlSenderKeyDistributionMessage": "MwjNy4mmARAGGiC1CHTx3Ejk4fyEg14oxKJGKLWiI/w5sacJAWPhD4AIQCIhBWj0UzshXpENvgQaz/kneLbZUPsXIcsaCPOAzgCxkzgX"
+    },
+    "messageContextInfo": {
+      "messageSecret": "xHJ0FS2clJaNEyafom8iG54MBbpwsJlgDNDo3NOfnAY=",
+      "limitSharingV2": {
+        "sharingLimited": false,
+        "trigger": "UNKNOWN",
+        "limitSharingSettingTimestamp": "0",
+        "initiatedByMe": false
+      }
+    }
+  },
+  "pesan": "halo",
+  "instance_key": "MOixAfMQgT2q",
+  "keyword": "*",
+  "file": null,
+  "whatsapp_number": "120363403933067028@g.us",
+  "source": "group",
+  "event": "message"
+}
+
